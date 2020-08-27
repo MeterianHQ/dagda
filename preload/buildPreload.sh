@@ -102,12 +102,6 @@ while [[ -z "$(echo "${initStatusResponse}" | grep "Updated")" ]]; do
         exit 1
     fi
 
-    if [[ -n "$(echo "${initStatusResponse}" | grep "TerminatedWorkerError")" ]]; then
-        echo "Unexpected exception of type TerminatedWorkerError occurred"
-        echo "Restarting db update..."
-        dagdaApi "POST" "vuln/init"
-    fi
-
     if [[ -n "$(echo "${initStatusResponse}" | grep -E "Internal Server Error")" ]]; then
         echo "Db update returned: Internal Server Error"
         echo "Check that dagda and related containers are appropriately set up"
@@ -115,10 +109,16 @@ while [[ -z "$(echo "${initStatusResponse}" | grep "Updated")" ]]; do
     fi
 
     if [[ -n "$(echo "${initStatusResponse}" | grep -E "Unexpected exception")" ]]; then
-        echo "${initStatusResponse}"
-        echo
-        timeout 1 docker logs -f -t "${DAGDA_CONTAINER_NAME}"
-        exit 1
+        if [[ -n "$(echo "${initStatusResponse}" | grep "TerminatedWorkerError")" ]]; then
+            echo "Unexpected exception of type TerminatedWorkerError occurred"
+            echo "Restarting db update..."
+            dagdaApi "POST" "vuln/init"
+        else
+            echo "${initStatusResponse}"
+            echo
+            timeout 1 docker logs -f -t "${DAGDA_CONTAINER_NAME}"
+            exit 1
+        fi
     fi
 
     sleep 10
