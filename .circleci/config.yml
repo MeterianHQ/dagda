@@ -1,0 +1,38 @@
+version: 2.1
+jobs:
+  build:
+     machine:
+       image: ubuntu-1604:201903-01
+     steps:
+       - checkout
+       - run:
+           name: "Setup custom environment variables"
+           command: echo 'export METERIAN_DB_PRELOAD_FULL_IMAGE="meterian/cs-dagda-db:latest"' >> $BASH_ENV 
+       - run:
+           name: "Build the Meterian Dagda Preload image"
+           command: |
+              cd preload
+              ./buildPreload.sh
+       - run:
+           name: "Push Meterian Dagda Preload image to Docker Hub"
+           command: |
+              cd preload
+              ./pushPreload.sh
+
+
+
+workflows:
+  version: 2
+  commit-workflow:
+    jobs:
+      - build
+  scheduled-workflow:                                                                                                                                                          
+    triggers:                                                                                                                                                             
+      - schedule:                                                                                                                                                         
+          cron: "0 12 * * *"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - build
