@@ -3,6 +3,7 @@
 set -e
 set -u
 set -o pipefail
+set -x
 
 DAGDA_REPO="3grander/dagda"
 DAGDA_VERSION="0.8.1"
